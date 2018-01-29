@@ -1,0 +1,65 @@
+
+//----------------------------------------------------------------------------
+//  define a panel to run the different demos
+//----------------------------------------------------------------------------
+
+proc make_demopanel() {
+	xpanel("Simulations of cortical cells")
+	xradiobutton("Regular-spiking pyramidal cell","restart(\"demo_PY_RS\")")
+	xradiobutton("Bursting pyramidal cell","restart(\"demo_PY_LTS\")")
+        xradiobutton("Fast-spiking interneuronl","restart(\"demo_IN_FS\")")
+	xpanel(20,100)
+}
+
+proc restart() {local i
+
+//	if (name_declared("IN") == 2) { objref IN[1] }
+//	if (name_declared("PY") == 2) { objref PY[1] }
+//	if (name_declared("IN") == 2) { objref IN[1] }
+//	if (name_declared("El") == 2) { objref El[1] }
+	ismenu = 0
+
+	if (electrodes_present) {
+		destroy_elec()
+	}
+
+	forall delete_section()
+
+	for i=0, n_graph_lists-1 {
+		graphList[i].remove_all()
+	}
+	flush_list.remove_all()
+	fast_flush_list.remove_all()
+	doNotify()
+	for (i= PWManager[0].count-1; i >= pwmcnt; i -= 1) {
+		PWManager[0].close(i)
+		doNotify()
+	}
+	stoprun = 0
+	cvode_active(0)
+
+	ismenu=0
+	
+	sprint(tstr, "%s.oc", $s1)
+	load_file(1, tstr)
+}
+
+
+ismenu=0
+
+load_file("nrngui.hoc")
+
+strdef tstr
+ncells=1
+objref El[ncells]
+
+electrodes_present=0	// after electrodes are created they must be
+			// destroyed if simulation restarted
+
+proc destroy_elec() {
+	execute("objref stim, vc",El[0])
+}
+
+pwmcnt = PWManager[0].count  // the initial GUIs should not be dismissed
+
+make_demopanel()

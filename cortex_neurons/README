@@ -1,0 +1,111 @@
+
+   NEURON DEMO FOR SIMULATING DIFFERENT CLASSES OF CORTICAL NEURONS
+
+                          Alain Destexhe
+
+            CNRS, UNIC (Bat-33), Avenue de la Terrasse,
+                 91198 Gif-sur-Yvette, France
+
+                     Destexhe@iaf.cnrs-gif.fr
+                    http://cns.iaf.cnrs-gif.fr
+
+
+This package is running with the NEURON simulation program written by Michael
+Hines and available on internet at:
+  http://www.neuron.yale.edu
+
+The package contains mechanisms (.mod files) and programs (.oc files) needed to
+simulate single-compartment models of cortical neurons.  Details of the
+kinetics of currents are given in:
+
+  Destexhe A and Sejnowski TJ.  Thalamocortical Assemblies.
+  Oxford University Press, 2001
+
+See also the original paper:
+
+  Destexhe A, Contreras D and Steriade M.  Mechanisms underlying the 
+  synchronizing action of corticothalamic feedback through inhibition of 
+  thalamic relay cells. J. Neurophysiol. 79: 999-1016, 1998.
+
+  Destexhe A, Contreras D and Steriade M.  LTS cells in cerebral cortex
+  and their role in generating spike-and-wave oscillations.   
+  Neurocomputing 38: 555-563, 2001.
+
+(see electronic copy at  http://cns.iaf.cnrs-gif.fr)
+
+
+
+  PROGRAMS
+  ========
+
+demo_PY_RS.oc  : regular-spiking pyramidal neuron
+demo_PY_LTS.oc : bursting pyramidal neuron (LTS cell)
+demo_IN_FS.oc  : fast-spiking interneuron
+
+
+  MECHANISMS
+  ==========
+
+ HH2.mod		: fast sodium spikes (Na and K currents)
+ IM.mod 		: slow voltage-dependent potassium current (IM)
+ IT.mod 		: T-type calcium current
+ cadecay.mod		: intracellular calcium dynamics
+
+
+  HOW TO RUN
+  ==========
+
+Use autolaunch on modeldb or:
+
+unix platform:
+
+To compile the demo, NEURON and INTERVIEWS must be installed and working on
+the machine you are using.  Just type "nrnivmodl" to compile the mechanisms
+given in the mod files.
+
+Then, execute the main demo program by typing:
+
+  nrngui mosinit.hoc
+
+mswin platform:
+
+  Compile the mechanism (mod) files by using mknrndll.  Then start the simulation
+  by clicking on mosinit.hoc in windows explorer.
+
+back to any platform:
+
+Once the menu and graphics interface has appeared, select a simulation from the
+"Simulations of cortical cells" window.  Reposition the windows to find the
+Run Control window.   Then click on "Init and Run" button to start the simulation...
+
+For more information about how to get NEURON and how to install it, please
+refer to the following sites:
+  http://www.neuron.yale.edu
+  http://www.neuro.duke.edu
+
+
+
+For further information, please contact:
+
+Alain Destexhe
+
+CNRS, UNIC (Bat-33), 
+Avenue de la Terrasse,
+91198 Gif-sur-Yvette, 
+France
+
+email: Destexhe@iaf.cnrs-gif.fr
+http://cns.iaf.cnrs-gif.fr
+
+7/11/2005 Changes added which removes electrode on subsequent simulations.
+Note: 3/9/2002 Michael Hines made non-substantive changes to allow the
+3 demos to run in the same NEURON process. Thus the original button panel
+was replaced by a radio button panel, and any files which should only
+be opened once per NEURON launch are now opened via load_file instead
+of xopen. Lastly, before the gui for each demo is started the previous
+gui is erased with the restart() procedure which was added to
+rundemo.hoc
+
+20120109 updated SOLVE method in cadecay.mod to derivimplicit and IM.mod,
+IT.mod to cnexp as per
+http://www.neuron.yale.edu/phpbb/viewtopic.php?f=28&t=592

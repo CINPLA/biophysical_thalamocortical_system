@@ -1,0 +1,63 @@
+/*--------------------------------------------------------------
+	TEMPLATE FILE FOR DEFINING CORTINAL INTERNEURONS
+	------------------------------------------------
+
+	SIMPLIFIED NEURONS:
+
+	- one compartment model
+	- passive
+	- HH: Traub
+
+	Alain Destexhe, Laval University, 1995
+
+--------------------------------------------------------------*/
+
+
+
+begintemplate sIN		// create a new template object
+public soma,all
+objref all
+
+create soma[1]
+
+
+proc init() { local v_potassium, v_sodium
+
+  v_potassium = -100		// potassium reversal potential 
+  v_sodium = 50			// sodium reversal potential 
+
+  soma {
+	Ra = 100		// geometry 
+	nseg = 1
+	diam = 67
+	L = 67			// so that area is about 14000 um2
+	cm = 1
+
+	insert pas		// leak current 
+	e_pas = -70
+	// g_pas = 5e-5
+	g_pas = 0.00015		// Rin = 48Meg
+
+	// conversion with McC units: 
+	// g(S/cm2) = g(nS)*1e-9/29000e-8
+	//	    = g(nS) * 3.45e-6
+
+	insert hh2cx		// Hodgin-Huxley INa and IK 
+	ek = v_potassium
+	ena = v_sodium
+	vtraub_hh2cx = -55	// resting Vm, BJ was -55
+	gnabar_hh2cx = 0.05	// McCormick=15 muS, thal was 0.09
+//	gkbar_hh2cx = 0.007	// McCormick=2 muS, thal was 0.01
+//	gkbar_hh2cx = 0.004
+	gkbar_hh2cx = 0.01	// spike duration of interneurons
+
+  }
+
+  all = new SectionList()
+  soma all.append()
+
+}
+endtemplate sIN
+
+
+

@@ -1,0 +1,120 @@
+/*--------------------------------------------------------------
+	TEMPLATE FILE FOR DEFINING THALAMOCORTICAL NEURONS
+	SIMPLIFIED VERSION BY GH Dec. 2011
+	--------------------------------------------------
+
+	One compartment model and currents derived from:
+
+ 	McCormick, D.A. and Huguenard, J.R.  A model of the 
+	electrophysiological properties of thalamocortical relay neurons.  
+	J. Neurophysiology 68: 1384-1400, 1992.
+
+	- passive: parameters idem Rinzel
+	- HH: Traub with higher threshold
+	- IT: m2h, nernst, tau_h modified with double exponential
+	- Ih: Huguenard with Ca++ dependence added, Ca++-binding protein
+	- Ca++: simple decay, faster than McCormick
+
+
+	This model is described in detail in:
+
+	Destexhe, A., Bal, T., McCormick, D.A. and Sejnowski, T.J.
+	Ionic mechanisms underlying synchronized oscillations and propagating
+	waves in a model of ferret thalamic slices. Journal of Neurophysiology
+	76: 2049-2070, 1996.
+	See also http://www.cnl.salk.edu/~alain , http://cns.fmed.ulaval.ca
+
+
+	Alain Destexhe, Salk Institute and Laval University, 1995
+
+--------------------------------------------------------------*/
+
+
+begintemplate sTC		// create a new template object
+public soma, all //, kl
+objref all
+
+create soma[1]			// one compartment of about 7000 um2
+soma {
+  nseg = 1
+  diam = 47
+  L = 47
+  cm = 1
+}
+//objectvar kl
+
+proc init() { local v_potassium, v_sodium
+
+
+//objectvar kl
+//kl = new kleak()
+
+
+  v_potassium = -100		// potassium reversal potential 
+  v_sodium = 50			// sodium reversal potential 
+
+  soma {
+	diam = 47		// geometry 
+	L = 35		   //47			// so that area is about 7000 um2
+	nseg = 1
+	Ra = 100
+
+	insert pas		// leak current 
+	e_pas = -63		// gives rest = -60mV and tonic mode
+	g_pas = 3.8e-5	// from Rhodes & Llinas 2005
+
+//	kl.loc(0.5)		// K-leak
+//	Erev_kleak = v_potassium
+//	kl.gmax = 0.004		// (uS)
+				// conversion: x(uS) = x(mS/cm2)*29000e-8*1e3
+				//		     = x(mS/cm2) * 0.29
+
+/*
+	insert iar		// h-current
+	eh = -40		// reversal
+	nca_iar = 4		// nb of binding sites for Ca++ on protein
+	k2_iar = 0.0004		// decay of Ca++ binding on protein
+	cac_iar = 0.002		// half-activation of Ca++ binding
+	nexp_iar = 1		// nb of binding sites on Ih channel
+	k4_iar = 0.001		// decay of protein binding on Ih channel
+	Pc_iar = 0.01		// half-activation of binding on Ih channel
+	ginc_iar = 2		// augm of conductance of bound Ih
+	ghbar_iar = 2e-5	// low Ih for slow oscillations
+*/
+
+
+	insert TChh2		// Hodgin-Huxley INa and IK 
+	ek = v_potassium
+	ena = v_sodium
+//	vtraub_TChh2 = -25	// High threshold to simulated IA
+	vtraub_TChh2 = -50	// Typical AP-spiking threshold.
+//	gnabar_TChh2 = 0.09 //
+	gnabar_TChh2 = 0.015
+//	gkbar_TChh2 = 0.01
+	gkbar_TChh2 = 0.0025
+
+
+	insert TCit		// T-current 
+	cai = 2.4e-4 
+	cao = 2 
+	eca = 120 
+//	gcabar_TCit = 0.002
+	gcabar_TCit = 0.0002 // Destexhe values are too extreme.
+
+
+	insert TCcad		// calcium decay
+	depth_TCcad = 1
+	taur_TCcad = 5
+	cainf_TCcad = 2.4e-4
+	kt_TCcad = 0		// no pump
+  }
+
+  all = new SectionList()
+  soma all.append()
+
+
+}
+endtemplate sTC
+
+
+

@@ -1,0 +1,203 @@
+/*----------------------------------------------------------------------------
+
+	Simplified model of fast-spiking cortical neuron
+	================================================
+
+        Single-compartment model of "fast-spiking" cortical neurons,
+        which is the most commonly encountered electrophysiological type
+        of inhibitory (interneuron) cell in cortex.  The model is based
+	on the presence of two voltage-dependent currents: 
+        - INa, IK: action potentials
+	(no spike-frequency adaptation in this model)
+
+
+  These models were used in a thalamocortical model, described in the
+  following reference:
+
+  Destexhe, A., Contreras, D. and Steriade, M.  Mechanisms underlying the 
+  synchronizing action of corticothalamic feedback through inhibition of 
+  thalamic relay cells. J. Neurophysiol. 79: 999-1016, 1998.
+
+
+        Alain Destexhe, CNRS, 2000
+	http://cns.iaf.cnrs-gif.fr
+
+----------------------------------------------------------------------------*/
+
+
+batch = 0		// for batch processing (use nrniv)
+
+
+//----------------------------------------------------------------------------
+//  load and define general graphical procedures
+//----------------------------------------------------------------------------
+
+load_file("stdrun.hoc")
+
+objectvar g[20]			// max 20 graphs
+ngraph = 0
+
+proc addgraph() { local ii	// define subroutine to add a new graph
+				// addgraph("variable", minvalue, maxvalue)
+	ngraph = ngraph+1
+	ii = ngraph-1
+	g[ii] = new Graph()
+	g[ii].size(tstart,tstop,$2,$3)
+	g[ii].xaxis()
+	g[ii].yaxis()
+	g[ii].addvar($s1,1,0)
+	g[ii].save_name("graphList[0].")
+	graphList[0].append(g[ii])
+}
+
+proc addtext() { local ii	// define subroutine to add a text graph
+				// addtext("text")
+	ngraph = ngraph+1
+	ii = ngraph-1
+	g[ii] = new Graph()
+	g[ii].size(0,tstop,0,1)
+	g[ii].xaxis(3)
+	g[ii].yaxis(3)
+	g[ii].label(0.1,0.8,$s1)
+	g[ii].save_name("graphList[0].")
+	graphList[0].append(g[ii])
+	text_id = ii
+}
+
+proc addline() {		// to add a comment to the text window
+				// addline("text")
+	g[text_id].label($s1)
+}
+
+
+if(ismenu==0) {
+  nrnmainmenu()			// create main menu
+  nrncontrolmenu()		// crate control menu
+}
+
+
+//----------------------------------------------------------------------------
+//  transient time
+//----------------------------------------------------------------------------
+
+trans = 0000
+
+print " "
+print ">> Transient time of ",trans," ms"
+print " "
+
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------------------
+//  create IN cells
+//----------------------------------------------------------------------------
+
+print " "
+print "<<==================================>>"
+print "<<            CREATE CELLS          >>"
+print "<<==================================>>"
+print " "
+
+load_file("sIN_template")		// read geometry file
+
+ncells = 1			// nb of cells in each layer <<>>
+
+objectvar IN[ncells]
+for i=0,ncells-1 {
+  IN[i] = new sIN()
+}
+
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------------------
+//  insert electrode in each IN cell
+//----------------------------------------------------------------------------
+
+if(ismenu==0) {
+  load_file("electrod.hoc")	// electrode template
+  ismenu = 1
+}
+
+objectvar El[ncells]			// create electrodes
+
+CURR_AMP = 0.5
+
+for i=0,ncells-1 {			// insert one in each cell
+	IN[i].soma El[i] = new Electrode()
+	IN[i].soma El[i].stim.loc(0.5)
+	El[i].stim.del = 300
+	El[i].stim.dur = 400
+	El[i].stim.amp = CURR_AMP
+}
+
+
+electrodes_present=1
+
+
+
+
+//----------------------------------------------------------------------------
+//  setup simulation parameters
+//----------------------------------------------------------------------------
+
+Dt = 0.1			// macroscopic time step <<>>
+npoints = 10000
+
+dt = 0.1			// must be submultiple of Dt
+tstart = trans
+tstop = trans + npoints * Dt
+runStopAt = tstop
+steps_per_ms = 5
+celsius = 36
+v_init = -70
+
+
+
+
+
+
+//----------------------------------------------------------------------------
+//  add graphs
+//----------------------------------------------------------------------------
+
+strdef gtxt
+
+if(batch == 0) {
+  for i=0,ncells-1 {
+	sprint(gtxt,"IN[%d].soma.v(0.5)",i)
+	addgraph(gtxt,-120,40)
+  }
+}
+
+
+
+
+
+//----------------------------------------------------------------------------
+//  add text
+//----------------------------------------------------------------------------
+
+access IN[0].soma
+
+proc text() {
+  sprint(gtxt,"%d IN cells",ncells)
+  addtext(gtxt)
+  sprint(gtxt,"Passive: gleak=%g Eleak=%g",IN.soma.g_pas,IN.soma.e_pas)
+  addline(gtxt)
+  sprint(gtxt,"HH: gNa=%g, gK=%g, vtraub=%g",IN.soma.gnabar_hh2,\
+  IN.soma.gkbar_hh2,IN.soma.vtraub_hh2)
+  addline(gtxt)
+}
+

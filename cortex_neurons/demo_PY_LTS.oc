@@ -1,0 +1,242 @@
+/*----------------------------------------------------------------------------
+
+	Simplified model of bursting cortical neuron
+	============================================
+
+        Single-compartment model of "rebound bursts" in pyramidal
+        neurons (type of cell very common in association areas of
+	cortex).  The model is based on the presence of four
+        voltage-dependent currents: 
+        - INa, IK: action potentials
+        - IM: slow K+ current for spike-frequency adaptation
+        - IT: T-type calcium currents for burst generation
+
+This model is described in the following reference:
+
+  Destexhe, A. Contreras, D. and Steriade, M.  LTS cells in cerebral cortex
+  and their role in generating spike-and-wave oscillations.   
+  Neurocomputing 38: 555-563 (2001).
+
+
+        Alain Destexhe, CNRS, 2000
+	http://cns.iaf.cnrs-gif.fr
+
+----------------------------------------------------------------------------*/
+
+
+batch = 0		// for batch processing (use nrniv)
+
+
+//----------------------------------------------------------------------------
+//  load and define general graphical procedures
+//----------------------------------------------------------------------------
+
+load_file("stdrun.hoc")
+
+objectvar g[20]			// max 20 graphs
+ngraph = 0
+
+proc addgraph() { local ii	// define subroutine to add a new graph
+				// addgraph("variable", minvalue, maxvalue)
+	ngraph = ngraph+1
+	ii = ngraph-1
+	g[ii] = new Graph()
+	g[ii].size(tstart,tstop,$2,$3)
+	g[ii].xaxis()
+	g[ii].yaxis()
+	g[ii].addvar($s1,1,0)
+	g[ii].save_name("graphList[0].")
+	graphList[0].append(g[ii])
+}
+
+proc addtext() { local ii	// define subroutine to add a text graph
+				// addtext("text")
+	ngraph = ngraph+1
+	ii = ngraph-1
+	g[ii] = new Graph()
+	g[ii].size(0,tstop,0,1)
+	g[ii].xaxis(3)
+	g[ii].yaxis(3)
+	g[ii].label(0.1,0.8,$s1)
+	g[ii].save_name("graphList[0].")
+	graphList[0].append(g[ii])
+	text_id = ii
+}
+
+proc addline() {		// to add a comment to the text window
+				// addline("text")
+	g[text_id].label($s1)
+}
+
+
+if(ismenu==0) {
+  nrnmainmenu()			// create main menu
+  nrncontrolmenu()		// crate control menu
+}
+
+
+
+//----------------------------------------------------------------------------
+//  transient time
+//----------------------------------------------------------------------------
+
+trans = 0000
+
+print " "
+print ">> Transient time of ",trans," ms"
+print " "
+
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------------------
+//  create PY cells
+//----------------------------------------------------------------------------
+
+print " "
+print "<<==================================>>"
+print "<<            CREATE CELLS          >>"
+print "<<==================================>>"
+print " "
+
+load_file("sPYr_template")		// read geometry file
+
+ncells = 1			// nb of cells in each layer <<>>
+
+objectvar PY[ncells]
+for i=0,ncells-1 {
+  PY[i] = new sPYr()
+}
+
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------------------
+//  Rebound parameters
+//----------------------------------------------------------------------------
+
+// T-current density adjusted to delaPena & Geigo-Barrientos
+
+PY[0].soma {
+	gcabar_it = 4e-4
+	gkbar_im = 3e-5
+	g_pas = 1e-5
+	e_pas = -85
+	gnabar_hh2 = 0.05
+	gkbar_hh2 = 0.005
+}
+
+// this parameter set (above) is for bursting behavior; for 
+// regular spiking:
+//   e_pas = -75
+//   El[0].stim.amp = 0.12
+// LTS:
+//   e_pas = -60
+//   El[0].stim.amp = -0.075
+// bursting:
+//   e_pas = -85
+//   El[0].stim.amp = 0.15
+
+// classic RS and FS behavior are obtained by blocking IT and IM successively
+
+
+
+
+
+
+
+//----------------------------------------------------------------------------
+//  insert electrode in each PY cell
+//----------------------------------------------------------------------------
+
+if(ismenu==0) {
+  load_file("electrod.hoc")	// electrode template
+  ismenu = 1
+}
+
+objectvar El[ncells]			// create electrodes
+
+CURR_AMP = 0.15
+
+for i=0,ncells-1 {			// insert one in each cell
+	PY[i].soma El[i] = new Electrode()
+	PY[i].soma El[i].stim.loc(0.5)
+	El[i].stim.del = 400
+	El[i].stim.dur = 400
+	El[i].stim.amp = CURR_AMP
+}
+
+electrodes_present=1
+
+
+//----------------------------------------------------------------------------
+//  setup simulation parameters
+//----------------------------------------------------------------------------
+
+Dt = .1				// macroscopic time step <<>>
+npoints = 10000
+
+dt = 0.1			// must be submultiple of Dt
+tstart = trans
+tstop = trans + npoints * Dt
+runStopAt = tstop
+steps_per_ms = 5
+celsius = 36
+v_init = -84
+
+
+
+
+
+
+//----------------------------------------------------------------------------
+//  add graphs
+//----------------------------------------------------------------------------
+
+strdef gtxt
+
+if(batch == 0) {
+  addgraph("PY[0].soma.m_im",0,1)
+//  addgraph("PY[0].soma.m_iahp",0,1)
+  for i=0,ncells-1 {
+	sprint(gtxt,"PY[%d].soma.v(0.5)",i)
+	addgraph(gtxt,-120,40)
+  }
+}
+
+
+
+
+
+//----------------------------------------------------------------------------
+//  add text
+//----------------------------------------------------------------------------
+
+access PY[0].soma
+
+proc text() {
+  sprint(gtxt,"%d PY cells",ncells)
+  addtext(gtxt)
+  sprint(gtxt,"Passive: gleak=%g Eleak=%g",PY.soma.g_pas,PY.soma.e_pas)
+  addline(gtxt)
+  sprint(gtxt,"HH: gNa=%g, gK=%g, vtraub=%g",PY.soma.gnabar_hh2,\
+  PY.soma.gkbar_hh2,PY.soma.vtraub_hh2)
+  addline(gtxt)
+  sprint(gtxt,"IM: g=%g, taumax=%g",PY.soma.gkbar_im,taumax_im)
+  addline(gtxt)
+  sprint(gtxt,"Ca++: tau=%g, depth=%g, cainf=%g",taur_cad,depth_cad,cainf_cad)
+  addline(gtxt)
+  sprint(gtxt,"IT: g=%g",PY.soma.gcabar_it)
+  addline(gtxt)
+}
+
